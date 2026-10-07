@@ -1,3 +1,4 @@
+-- 1. Top 10 Donors by Total Contribution
 SELECT dn.donor_id, donor_name, donor_type, SUM(amount) AS total_donated
 FROM donors dn
 JOIN donations dt ON dn.donor_id = dt.donor_id
@@ -5,6 +6,7 @@ GROUP BY dn.donor_id, donor_name, donor_type
 ORDER BY total_donated DESC
 LIMIT 10;
 
+-- 2. Total Donations by Region and Year
 SELECT region, strftime('%Y', dt.donation_date) AS year, sum(amount) AS total_donations
 FROM countries c
 JOIN donors d ON c.country_id = d.country_id
@@ -12,6 +14,7 @@ JOIN donations dt ON d.donor_id = dt.donor_id
 GROUP BY region, year
 ORDER BY year, total_donations DESC;
 
+-- 3. Donor Retention (Consecutive-Year Giving)
 WITH yearly_donations AS (
     SELECT donor_id, CAST(strftime('%Y', donation_date) AS INTEGER) AS donation_year
     FROM donations
@@ -25,7 +28,7 @@ SELECT *
 FROM donation_history
 WHERE donation_year - previous_year = 1;
 
-
+-- 4. Year-over-Year Donation Growth by Sector
 WITH sector_yearly AS (
     SELECT p.sector, strftime('%Y', d.donation_date) AS year, SUM(d.amount) AS total
     FROM donations d
@@ -37,7 +40,7 @@ SELECT sector, year, total,
 FROM sector_yearly
 ORDER BY sector, year;
 
-
+-- 5. Cost per Beneficiary by Project (Efficiency Metric)
 SELECT p.project_name, p.budget, SUM(b.beneficiaries_reached) AS total_beneficiaries,
        ROUND(p.budget * 1.0 / NULLIF(SUM(b.beneficiaries_reached), 0), 2) AS cost_per_beneficiary
 FROM projects p
@@ -45,7 +48,7 @@ JOIN beneficiaries b ON p.project_id = b.project_id
 GROUP BY p.project_id
 ORDER BY cost_per_beneficiary ASC;
 
-
+-- 6. Project Ranking by Donations Within Each Region
 SELECT c.region, p.project_name, SUM(d.amount) AS total_donations,
        RANK() OVER (PARTITION BY c.region ORDER BY SUM(d.amount) DESC) AS rank_in_region
 FROM donations d
@@ -53,7 +56,7 @@ JOIN projects p ON d.project_id = p.project_id
 JOIN countries c ON p.country_id = c.country_id
 GROUP BY c.region, p.project_id;
 
-
+-- 7. Data Cleaning: Detect Duplicate Donation Records
 WITH ranked AS (
     SELECT *,
            ROW_NUMBER() OVER (PARTITION BY donor_id, project_id, donation_date, amount ORDER BY donation_id) AS rn
