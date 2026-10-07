@@ -1,8 +1,8 @@
-SELECT donor_name, donor_type, sum(amount) AS total_donated
+SELECT dn.donor_id, donor_name, donor_type, SUM(amount) AS total_donated
 FROM donors dn
 JOIN donations dt ON dn.donor_id = dt.donor_id
-GROUP BY donor_name
-ORDER BY amount DESC
+GROUP BY dn.donor_id, donor_name, donor_type
+ORDER BY total_donated DESC
 LIMIT 10;
 
 SELECT region, strftime('%Y', dt.donation_date) AS year, sum(amount) AS total_donations
